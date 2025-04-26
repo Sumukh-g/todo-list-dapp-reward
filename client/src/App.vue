@@ -15,7 +15,7 @@
 
           <b-navbar-nav>
             <b-nav-item href="#" disabled>
-                Network<br>: Rinkeby
+                Network<br>: {{ networkName }}
             </b-nav-item>
             <b-nav-item href="#" disabled>
                 Punishment (sec)
@@ -98,8 +98,66 @@ export default {
     AddTaskForm,
     Debugs,
   },
-
-  computed: mapGetters('drizzle', ['isDrizzleInitialized'])
+  
+  data() {
+    return {
+      networkName: 'Loading...'
+    }
+  },
+  
+  computed: {
+    ...mapGetters('drizzle', ['isDrizzleInitialized', 'drizzleInstance'])
+  },
+  
+  mounted() {
+    if (this.isDrizzleInitialized) {
+      this.getNetworkName();
+    }
+  },
+  
+  watch: {
+    isDrizzleInitialized(initialized) {
+      if (initialized) {
+        this.getNetworkName();
+      }
+    }
+  },
+  
+  methods: {
+    async getNetworkName() {
+      if (this.drizzleInstance && this.drizzleInstance.web3) {
+        try {
+          const networkId = await this.drizzleInstance.web3.eth.net.getId();
+          switch (networkId) {
+            case 1:
+              this.networkName = 'Mainnet';
+              break;
+            case 3:
+              this.networkName = 'Ropsten';
+              break;
+            case 4:
+              this.networkName = 'Rinkeby';
+              break;
+            case 5:
+              this.networkName = 'Goerli';
+              break;
+            case 42:
+              this.networkName = 'Kovan';
+              break;
+            default:
+              if (networkId > 1000000000) {
+                this.networkName = 'Local (Ganache)';
+              } else {
+                this.networkName = `Network #${networkId}`;
+              }
+          }
+        } catch (error) {
+          console.error('Error getting network:', error);
+          this.networkName = 'Unknown';
+        }
+      }
+    }
+  }
 }
 </script>
 
